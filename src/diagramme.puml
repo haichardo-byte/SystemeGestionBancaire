@@ -1,0 +1,96 @@
+@startuml
+' ===== INTERFACES =====
+interface CalculInteret {
+    + appliquerInteret()
+}
+
+' ===== EXCEPTIONS =====
+class MontantInvalideException
+class SoldeInsuffisantException
+class LimiteDepasseeException
+
+' ===== CLASSES MODELE =====
+class Client {
+    - nom : String
+    - prenom : String
+    - CIN : String
+    - adresse : String
+    - comptes : List<Compte>
+    + Client(nom : String, prenom : String, CIN : String, adresse : String)
+    + ajouterCompte(c : Compte)
+    + getComptes() : List<Compte>
+}
+
+abstract class Compte {
+    - numero : String
+    - solde : double
+    - transactions : List<Transaction>
+    + Compte(numero : String, soldeInitial : double)
+    + deposer(montant : double) throws MontantInvalideException
+    + retirer(montant : double) throws SoldeInsuffisantException, LimiteDepasseeException
+    + ajouterTransaction(type : String, montant : double)
+    + getTransactions() : List<Transaction>
+    + getSolde() : double
+    + getNumero() : String
+}
+
+class CompteCourant {
+    - decouvertAutorise : double
+    + CompteCourant(numero : String, soldeInitial : double, decouvert : double)
+    + deposer(montant : double) throws MontantInvalideException
+    + retirer(montant : double) throws SoldeInsuffisantException
+}
+
+class CompteEpargne {
+    - tauxInteret : double
+    + CompteEpargne(numero : String, soldeInitial : double, taux : double)
+    + deposer(montant : double) throws MontantInvalideException
+    + retirer(montant : double) throws SoldeInsuffisantException
+    + appliquerInteret()
+    + getTauxInteret() : double
+    + setTauxInteret(taux : double)
+}
+
+class CompteEntreprise {
+    - plafondTransaction : double
+    + CompteEntreprise(numero : String, soldeInitial : double, plafond : double)
+    + deposer(montant : double) throws MontantInvalideException
+    + retirer(montant : double) throws SoldeInsuffisantException, LimiteDepasseeException
+}
+
+class Transaction {
+    - type : String
+    - montant : double
+    - date : LocalDateTime
+    + Transaction(type : String, montant : double, date : LocalDateTime)
+    + getType() : String
+    + getMontant() : double
+    + getDate() : LocalDateTime
+}
+
+' ===== FACTORY =====
+class CompteFactory {
+    + creerCompte(type : String, numero : String, solde : double, param : double) : Compte
+}
+
+' ===== SERVICE =====
+class BanqueService {
+    + virement(source : Compte, destination : Compte, montant : double)
+}
+
+' ===== RELATIONS =====
+Compte <|-- CompteCourant
+Compte <|-- CompteEpargne
+Compte <|-- CompteEntreprise
+CompteEpargne ..|> CalculInteret
+
+Client "1" -- "*" Compte
+Compte "1" -- "*" Transaction
+
+CompteFactory ..> Compte
+BanqueService ..> Compte
+
+MontantInvalideException ..> Compte : throws
+SoldeInsuffisantException ..> Compte : throws
+LimiteDepasseeException ..> Compte : throws
+@enduml
